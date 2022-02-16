@@ -24,8 +24,14 @@ public class Starter extends ApplicationAdapter {
 	private Ship me;
 	private List<Ship> enemies = new ArrayList<>();
 
-	private KeyboardAdapter inputProcessor = new KeyboardAdapter();
-	
+	private final KeyboardAdapter inputProcessor;
+	private MessageSender messageSender;
+	private InputState inputState;
+
+	public Starter(InputState inputState) {
+		this.inputProcessor = new KeyboardAdapter(inputState);
+	}
+
 	@Override
 	public void create () {
 		Gdx.input.setInputProcessor(inputProcessor); //регистрируем адаптер
@@ -64,5 +70,16 @@ public class Starter extends ApplicationAdapter {
 	public void dispose () {
 		batch.dispose();
 		me.dispose();
+	}
+
+	public void setMessageSender(MessageSender messageSender) {
+		this.messageSender = messageSender;
+	}
+
+	public void handleTimer() {
+		if(inputProcessor != null) {
+			InputState playerState = inputProcessor.updateAndGetInputState(me.getOrigin());
+			messageSender.sendMessage(playerState);
+		}
 	}
 }

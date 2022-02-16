@@ -1,11 +1,13 @@
 package asandersa.gdx.client;
 
+import asandersa.gdx.client.dto.InputStateImpl;
 import asandersa.gdx.client.ws.EventListenerCallback;
 import asandersa.gdx.client.ws.WebSocket;
 import com.badlogic.gdx.ApplicationListener;
 import com.badlogic.gdx.backends.gwt.GwtApplication;
 import com.badlogic.gdx.backends.gwt.GwtApplicationConfiguration;
 import asandersa.gdx.Starter;
+import com.google.gwt.user.client.Timer;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -31,14 +33,36 @@ public class HtmlLauncher extends GwtApplication {
                 }-*/
         ;
 
+
+        private native String toJson(Object obj)
+                /*-{
+                        return JSON.stringify(obj);
+                }-*/
+        ;
+
+
         @Override
         public ApplicationListener createApplicationListener () {
                 WebSocket client = getWebSocket("ws://localhost:8888/ws");
                 AtomicBoolean once = new AtomicBoolean(false);
-                Starter starter = new Starter();
+
+                Starter starter = new Starter(new InputStateImpl());
+                starter.setMessageSender(message -> {
+                        client.send(toJson(message));
+                });
+
+                Timer timer = new Timer() {
+
+                        @Override
+                        public void run() {
+                                starter.handleTimer();
+                        }
+                };
+                timer.scheduleRepeating(1000);
+
                 EventListenerCallback callback = event -> {
                         if (!once.get()) {
-                                client.send("hello");
+                                client.send(" hello");
                                 once.set(true);
                         }
                         log(event.getData());

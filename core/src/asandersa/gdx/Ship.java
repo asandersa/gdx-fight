@@ -13,9 +13,11 @@ public class Ship {
     private final Vector2 position = new Vector2(); //определяет положение в пространстве
     private final Vector2 angel = new Vector2();
 
-    private final Texture texture;
-    private final TextureRegion textureRegion;
+    private final Vector2 origin = new Vector2();
 
+    private final Texture texture;
+
+    private final TextureRegion textureRegion;
     /**
      * Инициализируем текстуру в конструкторе, передаем координаты объекта в вектор (x, y)
      */
@@ -27,6 +29,7 @@ public class Ship {
         texture = new Texture(textureName);
         textureRegion = new TextureRegion(texture);
         position.set(x,y);
+        origin.set(position).add(halfSize, halfSize);
     }
 
     /**
@@ -55,14 +58,16 @@ public class Ship {
 
     public void moveTo(Vector2 direction) {
         position.add(direction); //прибавляет к положению вектор перемещения
+        origin.set(position).add(halfSize, halfSize);
     }
 
     public void rotateTo(Vector2 mousePos) {
         /**
          * Вектор mousePos - координаты мыши, вектор position - координаты персонажа
          * Разница векторов mousePose - position = координаты курсора относительно персонажа (описывают угол наклона)
+         * upd origin = position + (halfSize, halfSize)
          */
-        angel.set(mousePos).sub(position.x + halfSize, position.y + halfSize);
+        angel.set(mousePos).sub(origin);
 
     }
 
@@ -71,6 +76,8 @@ public class Ship {
         return position;
     }
 
-
+    public Vector2 getOrigin() {
+        return origin;
+    }
 
 }
