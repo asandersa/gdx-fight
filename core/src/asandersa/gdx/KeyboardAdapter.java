@@ -94,4 +94,8 @@ public class KeyboardAdapter extends InputAdapter {
         inputState.setAngle(angle.angleDeg());
         return inputState;
     }
+
+    public InputState getInputState() {
+        return inputState;
+    }
 }

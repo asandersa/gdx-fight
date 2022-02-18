@@ -1,5 +1,6 @@
 package asandersa.gdx;
 
+import asandersa.gdx.emitter.Emitter;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
@@ -11,13 +12,16 @@ public class Ship {
 
 
     private final Vector2 position = new Vector2(); //определяет положение в пространстве
-    private final Vector2 angel = new Vector2();
+    private final Vector2 angel = new Vector2(1, 1);
 
     private final Vector2 origin = new Vector2();
 
     private final Texture texture;
 
     private final TextureRegion textureRegion;
+
+    public Emitter emitter = new Emitter();
+
     /**
      * Инициализируем текстуру в конструкторе, передаем координаты объекта в вектор (x, y)
      */
@@ -80,4 +84,12 @@ public class Ship {
         return origin;
     }
 
+    public void moveTo(float x, float y) {
+        position.set(x, y);
+        origin.set(position).add(halfSize, halfSize);
+    }
+
+    public void rotateTo(float angle) {
+        this.angel.setAngleDeg(angle);
+    }
 }

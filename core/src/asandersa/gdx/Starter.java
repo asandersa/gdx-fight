@@ -1,9 +1,14 @@
 package asandersa.gdx;
 
+import asandersa.gdx.emitter.Emitter;
+import asandersa.gdx.emitter.Particle;
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.utils.ObjectMap;
 import com.badlogic.gdx.utils.ScreenUtils;
 
 import java.util.ArrayList;
@@ -21,12 +26,15 @@ import java.util.stream.IntStream;
 public class Starter extends ApplicationAdapter {
 	SpriteBatch batch;
 
-	private Ship me;
+	private String meId;
+	private ObjectMap<String,Ship> ships = new ObjectMap<>();
+
 	private List<Ship> enemies = new ArrayList<>();
 
 	private final KeyboardAdapter inputProcessor;
 	private MessageSender messageSender;
-	private InputState inputState;
+
+	private Texture bulletTexture;
 
 	public Starter(InputState inputState) {
 		this.inputProcessor = new KeyboardAdapter(inputState);
@@ -37,39 +45,45 @@ public class Starter extends ApplicationAdapter {
 		Gdx.input.setInputProcessor(inputProcessor); //регистрируем адаптер
 		batch = new SpriteBatch();
 
-		me = new Ship(100, 100);
+		Ship me = new Ship(100, 100);
+		ships.put(meId, me);
+		bulletTexture = new Texture("bullet.png");
 
-		List<Ship> newEnemies = IntStream.range(0, 5)
-				.mapToObj(i -> {
-					int x = MathUtils.random(Gdx.graphics.getWidth());
-					int y = MathUtils.random(Gdx.graphics.getHeight());
 
-					return new Ship(x, y, "shipEnemy.png");
-				})
-				.collect(Collectors.toList());
-		enemies.addAll(newEnemies);
 	}
 
 	@Override
 	public void render () {
-		me.moveTo(inputProcessor.getDirection());
-		me.rotateTo(inputProcessor.getMousePos());
+		float delta = Gdx.graphics.getDeltaTime();
 
 		ScreenUtils.clear(0, 0, 0, 0);
 		batch.begin();
-		me.render(batch);
-		enemies.forEach(enemy -> {
-			enemy.render(batch);
-			enemy.rotateTo(me.getPosition());
-		});
+		for (String key : ships.keys()) {
+			Ship ship = ships.get(key);
+			InputState inputState = inputProcessor.getInputState();
+			Emitter emitter = ship.emitter;
+			emitter.setAngle(inputState.getAngle());
+			emitter.getPosition().set(ship.getOrigin());
+			if (inputState.isFirePressed()) {
+				emitter.start(delta);
+			}
+			emitter.act(delta);
+			for (Particle particle : emitter.getParticles()) {
+				Vector2 position = particle.getPosition();
+				batch.draw(bulletTexture, position.x - 8, position.y - 8);
+			}
+			ship.render(batch);
 
+		}
 		batch.end();
 	}
 	
 	@Override
 	public void dispose () {
 		batch.dispose();
-		me.dispose();
+		for (Ship value : ships.values()) {
+			value.dispose();
+		}
 	}
 
 	public void setMessageSender(MessageSender messageSender) {
@@ -77,9 +91,36 @@ public class Starter extends ApplicationAdapter {
 	}
 
 	public void handleTimer() {
-		if(inputProcessor != null) {
+		if(inputProcessor != null && !ships.isEmpty()) {
+			Ship me = ships.get(meId);
 			InputState playerState = inputProcessor.updateAndGetInputState(me.getOrigin());
 			messageSender.sendMessage(playerState);
 		}
+	}
+
+    public void setMeId(String meId) {
+		this.meId = meId;
+    }
+
+	public void evict(String idToEvict) {
+		ships.remove(idToEvict);
+	}
+
+	public void updateShip(String id, float x, float y, float angle) {
+		if (ships.isEmpty()) {
+			return;
+		}
+
+		Ship ship = ships.get(id);
+		if (ship == null) {
+			ship = new Ship(x, y,"shipEnemy.png");
+			ships.put(id, ship);
+		} else {
+			ship.moveTo(x, y);
+		}
+
+		ship.rotateTo(angle);
+
+
 	}
 }
